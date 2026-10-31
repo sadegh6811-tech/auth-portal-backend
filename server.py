@@ -6,6 +6,7 @@ class MockBackend(BaseHTTPRequestHandler):
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
+        # این خط به دامنه Vercel اجازه دسترسی می‌دهد
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
@@ -25,6 +26,7 @@ class MockBackend(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
         _ = self.rfile.read(content_length)
+        
         if self.path == '/api/auth/login' or self.path == '/api/auth/register':
             response = {"access_token": "mock_token_12345", "token_type": "bearer", "user": "sadegh"}
         elif self.path == '/api/karami/trade':
@@ -33,10 +35,10 @@ class MockBackend(BaseHTTPRequestHandler):
             response = {"success": True, "log": ">> MATHBOT DISCOVERY (CLOUD)...\n>> FOUND NEW EQUATION: E = mc^2"}
         else:
             response = {"success": True, "message": "Cloud endpoint reached"}
+        
         self._set_headers(200)
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
-# Render از متغیر محیطی PORT استفاده می‌کند
 port = int(os.environ.get("PORT", 8000))
 print(f"🚀 Cloud Backend running on port {port}")
 ThreadingHTTPServer(('0.0.0.0', port), MockBackend).serve_forever()
