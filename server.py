@@ -6,10 +6,11 @@ class MockBackend(BaseHTTPRequestHandler):
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
-        # این خط به دامنه Vercel اجازه دسترسی می‌دهد
-        self.send_header('Access-Control-Allow-Origin', '*')
+        # تنظیم CORS برای دامنه Vercel شما
+        self.send_header('Access-Control-Allow-Origin', 'https://auth-portal-clean-mu.vercel.app')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
         self.end_headers()
 
     def do_OPTIONS(self):
