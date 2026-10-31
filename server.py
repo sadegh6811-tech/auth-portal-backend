@@ -1,45 +1,32 @@
-import json
-import os
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import time
 
-class MockBackend(BaseHTTPRequestHandler):
-    def _set_headers(self, status=200):
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        # تنظیم CORS برای دامنه Vercel شما
-        self.send_header('Access-Control-Allow-Origin', 'https://auth-portal-clean-mu.vercel.app')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-        self.send_header('Access-Control-Allow-Credentials', 'true')
-        self.end_headers()
+app = FastAPI(title="ELEN Auth Backend")
 
-    def do_OPTIONS(self):
-        self._set_headers(200)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # باز کردن CORS برای تست قطعی
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    def do_GET(self):
-        if self.path == '/api/market':
-            response = {"success": True, "data": [{"symbol": "BTCUSDT", "price": 65000.5}, {"symbol": "ETHUSDT", "price": 3500.2}]}
-        else:
-            response = {"status": "ok", "message": "Cloud Backend is running"}
-        self._set_headers(200)
-        self.wfile.write(json.dumps(response).encode('utf-8'))
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+    username: str | None = None
 
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        _ = self.rfile.read(content_length)
-        
-        if self.path == '/api/auth/login' or self.path == '/api/auth/register':
-            response = {"access_token": "mock_token_12345", "token_type": "bearer", "user": "sadegh"}
-        elif self.path == '/api/karami/trade':
-            response = {"success": True, "log": ">> KARAMI ENGINE v2.0 (CLOUD)...\n>> SUCCESS. 3 TRADES COMPLETED."}
-        elif self.path == '/api/mathbot/discover':
-            response = {"success": True, "log": ">> MATHBOT DISCOVERY (CLOUD)...\n>> FOUND NEW EQUATION: E = mc^2"}
-        else:
-            response = {"success": True, "message": "Cloud endpoint reached"}
-        
-        self._set_headers(200)
-        self.wfile.write(json.dumps(response).encode('utf-8'))
+@app.get("/")
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "ts": int(time.time())}
 
-port = int(os.environ.get("PORT", 8000))
-print(f"🚀 Cloud Backend running on port {port}")
-ThreadingHTTPServer(('0.0.0.0', port), MockBackend).serve_forever()
+@app.post("/api/auth/register")
+def register(req: AuthRequest):
+    return {"status": "ok", "message": "User registered (mock)", "user": {"email": req.email}}
+
+@app.post("/api/auth/login")
+def login(req: AuthRequest):
+    return {"status": "ok", "token": "mock_jwt_token_" + req.email, "user": {"email": req.email}}
